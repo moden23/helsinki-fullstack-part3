@@ -8,10 +8,32 @@ const requestLogger = (req, res, next) => {
   console.log("---");
   next();
 };
-
-app.use(morgan("tiny"));
-app.use(morgan(`POST /api/persons`));
 app.use(express.json());
+app.use(
+  morgan("tiny", {
+    skip: function (req, res) {
+      return req.method === "POST";
+    },
+  }),
+);
+
+morgan.token("person", function (req, res) {
+  console.log(req.body);
+  const { name, number } = req.body;
+  return `${name} ${number}`;
+});
+
+app.use(
+  morgan(
+    `POST /api/persons :status :res[content-length] - :response-time ms :person`,
+    {
+      skip: function (req, res) {
+        return req.method !== "POST";
+      },
+    },
+  ),
+);
+
 app.use(requestLogger);
 let persons = [
   {
@@ -84,7 +106,7 @@ const generateId = () => {
 };
 app.post("/api/persons", (req, res) => {
   const body = req.body;
-  console.log(body);
+
   if (!body) {
     return res.status(400).json({ error: "content missing" });
   }
@@ -105,7 +127,6 @@ app.post("/api/persons", (req, res) => {
   };
   persons.push(person);
   res.json(person);
-  console.log(persons);
 });
 
 const unknownEndpoint = (req, res) => {
