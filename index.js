@@ -1,6 +1,8 @@
 const express = require("express");
 const morgan = require("morgan");
+const cors = require("cors");
 const app = express();
+app.use(cors());
 const requestLogger = (req, res, next) => {
   console.log("Method:", req.method);
   console.log("Path:  ", req.path);
@@ -19,8 +21,8 @@ app.use(
 
 morgan.token("person", function (req, res) {
   console.log(req.body);
-  const { name, number } = req.body;
-  return `${name} ${number}`;
+  const { name, phoneNumber } = req.body;
+  return `${name} ${phoneNumber}`;
 });
 
 app.use(
@@ -39,22 +41,22 @@ let persons = [
   {
     id: "1",
     name: "Arto Hellas",
-    number: "040-123456",
+    phoneNumber: "040-123456",
   },
   {
     id: "2",
     name: "Ada Lovelace",
-    number: "39-44-5323523",
+    phoneNumber: "39-44-5323523",
   },
   {
     id: "3",
     name: "Dan Abramov",
-    number: "12-43-234345",
+    phoneNumber: "12-43-234345",
   },
   {
     id: "4",
     name: "Mary Poppendieck",
-    number: "39-23-6423122",
+    phoneNumber: "39-23-6423122",
   },
 ];
 
@@ -113,8 +115,8 @@ app.post("/api/persons", (req, res) => {
   if (!body.name) {
     return res.status(400).json({ error: "name is missing" });
   }
-  if (!body.number) {
-    return res.status(400).json({ error: "phone number is missing" });
+  if (!body.phoneNumber) {
+    return res.status(400).json({ error: "phone phoneNumber is missing" });
   }
 
   if (persons.some((person) => person.name === body.name)) {
@@ -123,7 +125,7 @@ app.post("/api/persons", (req, res) => {
   const person = {
     id: generateId(),
     name: body.name,
-    number: body.number,
+    phoneNumber: body.phoneNumber,
   };
   persons.push(person);
   res.json(person);
