@@ -1,8 +1,10 @@
 const express = require("express");
 const morgan = require("morgan");
+const Person = require("./models/phonebook");
 
 const app = express();
 app.use(express.static("dist"));
+
 const requestLogger = (req, res, next) => {
   console.log("Method:", req.method);
   console.log("Path:  ", req.path);
@@ -37,40 +39,26 @@ app.use(
 );
 
 app.use(requestLogger);
-let persons = [
-  {
-    id: "1",
-    name: "Arto Hellas",
-    phoneNumber: "040-123456",
-  },
-  {
-    id: "2",
-    name: "Ada Lovelace",
-    phoneNumber: "39-44-5323523",
-  },
-  {
-    id: "3",
-    name: "Dan Abramov",
-    phoneNumber: "12-43-234345",
-  },
-  {
-    id: "4",
-    name: "Mary Poppendieck",
-    phoneNumber: "39-23-6423122",
-  },
-];
 
 app.get("/api/persons", (req, res) => {
-  res.json(persons);
+  Person.find({})
+    .then((persons) => {
+      res.json(persons);
+    })
+    .catch((error) => console.log(error));
 });
 
 app.get("/api/persons/:id", (req, res) => {
   const id = req.params.id;
-
-  const person = persons.find((person) => person.id === id);
-
-  if (person) res.json(person);
-  else res.status(404).end();
+  Person.findById(id)
+    .then((person) => {
+      if (person) res.json(person);
+      else res.status(404).end();
+    })
+    .catch((error) => {
+      console.log(error);
+      res.status(400).send({ error: "malformatted id" });
+    });
 });
 
 app.get("/info", (req, res) => {
@@ -94,18 +82,11 @@ app.get("/info", (req, res) => {
 
 app.delete("/api/persons/:id", (req, res) => {
   const id = req.params.id;
-  persons = persons.filter((person) => person.id !== id);
+  Person.findByIdAndDelete(id).then((res) => console.log("deleted"));
 
   res.status(204).end();
-  console.log(persons);
 });
 
-const generateId = () => {
-  let newId = Math.trunc(Math.random() * persons.length * 10000);
-  while (persons.find((person) => person.id === newId))
-    newId = Math.trunc(Math.random() * persons.length * 100);
-  return newId;
-};
 app.post("/api/persons", (req, res) => {
   const body = req.body;
 
@@ -119,16 +100,17 @@ app.post("/api/persons", (req, res) => {
     return res.status(400).json({ error: "phone phoneNumber is missing" });
   }
 
-  if (persons.some((person) => person.name === body.name)) {
-    return res.status(400).json({ error: "name must be unique" });
-  }
-  const person = {
-    id: generateId(),
+  // if (persons.some((person) => person.name === body.name)) {
+  //   return res.status(400).json({ error: "name must be unique" });
+  // }
+  const person = new Person({
     name: body.name,
     phoneNumber: body.phoneNumber,
-  };
-  persons.push(person);
-  res.json(person);
+  });
+
+  person.save().then((personSaved) => {
+    res.json(personSaved);
+  });
 });
 
 const unknownEndpoint = (req, res) => {
