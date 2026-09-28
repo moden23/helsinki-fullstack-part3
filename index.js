@@ -5,6 +5,14 @@ const Person = require("./models/phonebook");
 const app = express();
 app.use(express.static("dist"));
 
+const errorHandler = (error, request, response, next) => {
+  console.log(error.message);
+  if (error.name === "CastError") {
+    return response.status(400).send({ error: "malformatted id" });
+  }
+  next(error);
+};
+
 const requestLogger = (req, res, next) => {
   console.log("Method:", req.method);
   console.log("Path:  ", req.path);
@@ -45,20 +53,17 @@ app.get("/api/persons", (req, res) => {
     .then((persons) => {
       res.json(persons);
     })
-    .catch((error) => console.log(error));
+    .catch((error) => next(error));
 });
 
-app.get("/api/persons/:id", (req, res) => {
+app.get("/api/persons/:id", (req, res, next) => {
   const id = req.params.id;
   Person.findById(id)
     .then((person) => {
       if (person) res.json(person);
       else res.status(404).end();
     })
-    .catch((error) => {
-      console.log(error);
-      res.status(400).send({ error: "malformatted id" });
-    });
+    .catch((error) => next(error));
 });
 
 app.get("/info", (req, res) => {
@@ -82,9 +87,9 @@ app.get("/info", (req, res) => {
 
 app.delete("/api/persons/:id", (req, res) => {
   const id = req.params.id;
-  Person.findByIdAndDelete(id).then((res) => console.log("deleted"));
-
-  res.status(204).end();
+  Person.findByIdAndDelete(id)
+    .then((res) => res.status(204).end())
+    .catch((error) => next(error));
 });
 
 app.post("/api/persons", (req, res) => {
@@ -100,23 +105,41 @@ app.post("/api/persons", (req, res) => {
     return res.status(400).json({ error: "phone phoneNumber is missing" });
   }
 
-  // if (persons.some((person) => person.name === body.name)) {
-  //   return res.status(400).json({ error: "name must be unique" });
-  // }
   const person = new Person({
     name: body.name,
     phoneNumber: body.phoneNumber,
   });
 
-  person.save().then((personSaved) => {
-    res.json(personSaved);
-  });
+  person
+    .save()
+    .then((personSaved) => {
+      res.json(personSaved);
+    })
+    .catch((error) => next(error));
 });
 
+app.put("/api/persons/:id", (req, res, next) => {
+  const { name, phoneNumber } = req.body;
+  Person.findById(req.params.id)
+    .then((person) => {
+      if (!person) {
+        return res.status(404).end();
+      }
+
+      person.name = name;
+      person.phoneNumber = phoneNumber;
+
+      return note.save().then((updatedNote) => {
+        res.json(updatedNote);
+      });
+    })
+    .catch((error) => next(error));
+});
 const unknownEndpoint = (req, res) => {
   res.status(404).send({ error: "unknown endpoint" });
 };
 app.use(unknownEndpoint);
+app.use(errorHandler);
 const PORT = process.env.PORT || 3001;
 app.listen(PORT);
 console.log(`Server running on port ${PORT}`);
