@@ -1,11 +1,11 @@
 const express = require("express");
 const morgan = require("morgan");
-
+// const cors = require("cors");
 const Person = require("./models/phonebook");
 
 const app = express();
 app.use(express.static("dist"));
-
+// app.use(cors());
 const requestLogger = (req, res, next) => {
   console.log("Method:", req.method);
   console.log("Path:  ", req.path);
@@ -137,9 +137,12 @@ const unknownEndpoint = (req, res) => {
   res.status(404).send({ error: "unknown endpoint" });
 };
 const errorHandler = (error, request, response, next) => {
-  console.log(error.message);
+  console.log("ERRO MESSAGE", error.message);
   if (error.name === "CastError") {
     return response.status(400).send({ error: "malformatted id" });
+  }
+  if (error.name === "ValidationError") {
+    return response.status(400).json({ error: error.message });
   }
   next(error);
 };
