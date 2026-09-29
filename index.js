@@ -1,11 +1,12 @@
 const express = require("express");
 const morgan = require("morgan");
-// const cors = require("cors");
+const logger = require("./utils/logger");
+const config = require("./utils/config");
 const Person = require("./models/phonebook");
 
 const app = express();
 app.use(express.static("dist"));
-// app.use(cors());
+
 const requestLogger = (req, res, next) => {
   console.log("Method:", req.method);
   console.log("Path:  ", req.path);
@@ -16,23 +17,23 @@ const requestLogger = (req, res, next) => {
 app.use(express.json());
 app.use(
   morgan("tiny", {
-    skip: function (req, res) {
+    skip: function (req) {
       return req.method === "POST";
     },
   }),
 );
 
-morgan.token("person", function (req, res) {
-  console.log(req.body);
+morgan.token("person", function (req) {
+  logger.info(req.body);
   const { name, phoneNumber } = req.body;
   return `${name} ${phoneNumber}`;
 });
 
 app.use(
   morgan(
-    `POST /api/persons :status :res[content-length] - :response-time ms :person`,
+    "POST /api/persons :status :res[content-length] - :response-time ms :person",
     {
-      skip: function (req, res) {
+      skip: function (req) {
         return req.method !== "POST";
       },
     },
@@ -59,7 +60,7 @@ app.get("/api/persons/:id", (req, res, next) => {
     .catch((error) => next(error));
 });
 
-app.get("/info", (req, res) => {
+app.get("/info", (req, res, next) => {
   const requestedTime = new Date();
   const requestedTimeFormatted = new Intl.DateTimeFormat("en-GB", {
     dateStyle: "full",
@@ -86,7 +87,7 @@ app.delete("/api/persons/:id", (req, res, next) => {
   const id = req.params.id;
   console.log(id);
   Person.findByIdAndDelete(id)
-    .then((result) => res.status(204).end())
+    .then((res) => res.status(204).end())
     .catch((error) => next(error));
 });
 
@@ -138,6 +139,7 @@ const unknownEndpoint = (req, res) => {
 };
 const errorHandler = (error, request, response, next) => {
   console.log("ERRO MESSAGE", error.message);
+  logger.error(error.message);
   if (error.name === "CastError") {
     return response.status(400).send({ error: "malformatted id" });
   }
@@ -149,6 +151,5 @@ const errorHandler = (error, request, response, next) => {
 app.use(unknownEndpoint);
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 3001;
-app.listen(PORT);
-console.log(`Server running on port ${PORT}`);
+app.listen(config.PORT);
+console.log(`Server running on port ${config.PORT}`);

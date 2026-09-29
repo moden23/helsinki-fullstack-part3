@@ -1,12 +1,12 @@
-require("dotenv").config();
+const config = require("./utils/config");
 const mongoose = require("mongoose");
 
-const url = process.env.MONGODB_URI;
+const url = config.MONGODB_URI;
 
 mongoose.set("strictQuery", false);
 mongoose
   .connect(url, { family: 4 })
-  .then((result) => {
+  .then(() => {
     console.log("connected to MongoDB");
   })
   .catch((error) => {
@@ -17,9 +17,9 @@ const many = [
   {
     validator: function checkDash(number) {
       const dashIndex = number.indexOf("-");
-      if (dashIndex == -1 || dashIndex == 0) return false;
+      if (dashIndex === -1 || dashIndex === 0) return false;
     },
-    message: `please put dash after the first 2 or 3 digits`,
+    message: "please put dash after the first 2 or 3 digits",
   },
   {
     validator: function checkNumbers(number) {
@@ -36,9 +36,9 @@ const many = [
       const dashIndex = number.indexOf("-");
       const firstPart = number.slice(0, dashIndex);
       console.log(dashIndex, firstPart);
-      if (!(firstPart.length == 2 || firstPart.length == 3)) return false;
+      if (!(firstPart.length === 2 || firstPart.length === 3)) return false;
     },
-    message: `please fist part of phonenumber to be 2-3 digits`,
+    message: "please fist part of phonenumber to be 2-3 digits",
   },
 ];
 
