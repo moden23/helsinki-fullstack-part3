@@ -1,11 +1,10 @@
 const express = require("express");
 const morgan = require("morgan");
-const cors = require("cors");
+
 const Person = require("./models/phonebook");
 
 const app = express();
-// app.use(express.static("dist"));
-app.use(cors());
+app.use(express.static("dist"));
 
 const requestLogger = (req, res, next) => {
   console.log("Method:", req.method);
@@ -128,7 +127,7 @@ app.put("/api/persons/:id", (req, res, next) => {
       person.name = name;
       person.phoneNumber = phoneNumber;
 
-      return note.save().then((updatedNote) => {
+      return person.save().then((updatedNote) => {
         res.json(updatedNote);
       });
     })
