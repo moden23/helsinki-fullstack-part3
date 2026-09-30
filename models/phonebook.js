@@ -1,17 +1,4 @@
-const config = require("./utils/config");
 const mongoose = require("mongoose");
-
-const url = config.MONGODB_URI;
-
-mongoose.set("strictQuery", false);
-mongoose
-  .connect(url, { family: 4 })
-  .then(() => {
-    console.log("connected to MongoDB");
-  })
-  .catch((error) => {
-    console.log("error connecting to MongoDB:", error.message);
-  });
 
 const many = [
   {
